@@ -22,24 +22,16 @@ func Ping() (*Response, error) {
 		return nil, err
 	}
 
-	body, err := makeHTTPRequest(rippledURL, p)
-
-	var pr Response
-	err = json.Unmarshal(body, &pr)
-	if err != nil {
-		return nil, err
-	}
-
-	return &pr, nil
+	return queryServer(rippledURL, p)
 }
 
 // SignXaction sign a payment transaction using a rippled server.
-func SignXaction(secret string, account string, destination string, amount int) (*Response, error) {
+func SignXaction(secret string, account string, dest string, amount int) (*Response, error) {
 	r := request{Method: "sign"}
 	t := transaction{
 		Account:         account,
 		Amount:          amount,
-		Destination:     destination,
+		Destination:     dest,
 		TransactionType: "Payment",
 	}
 	p := param{
@@ -55,18 +47,7 @@ func SignXaction(secret string, account string, destination string, amount int) 
 		return nil, err
 	}
 
-	body, err := makeHTTPRequest(rippledURL, payload)
-	if err != nil {
-		return nil, err
-	}
-
-	var res *Response
-	err = json.Unmarshal(body, &res)
-	if err != nil {
-		return nil, err
-	}
-
-	return res, nil
+	return queryServer(rippledURL, payload)
 }
 
 // SubmitSignedXaction submits a signed transaction blob for entry into the ledger.
@@ -83,21 +64,38 @@ func SubmitSignedXaction(txBlob string) (*Response, error) {
 		return nil, err
 	}
 
-	body, err := makeHTTPRequest(rippledURL, payload)
-	if err != nil {
-		return nil, err
-	}
-
-	var res *Response
-	err = json.Unmarshal(body, &res)
-	if err != nil {
-		return nil, err
-	}
-
-	return res, nil
+	return queryServer(rippledURL, payload)
 }
 
-func makeHTTPRequest(url string, payload []byte) ([]byte, error) {
+// OpenPaymentChannel opens a payment channel from account -> dest.
+//
+// pubkey is the HEX representation of the sender's public key.
+func OpenPaymentChannel(secret string, account string, amt int, dest string,
+	pubkey string) (*Response, error) {
+	r := request{Method: "submit"}
+	t := transaction{
+		Account:         account,
+		Amount:          amt,
+		Destination:     dest,
+		TransactionType: "PaymentChannelCreate",
+	}
+	p := param{
+		Secret: secret,
+		TxJSON: t,
+	}
+
+	r.Params = make([]param, 0)
+	r.Params = append(r.Params, p)
+
+	payload, err := json.Marshal(r)
+	if err != nil {
+		return nil, err
+	}
+
+	return queryServer(rippledURL, payload)
+}
+
+func queryServer(url string, payload []byte) (*Response, error) {
 	p := bytes.NewBuffer(payload)
 
 	req, err := http.NewRequest("POST", url, p)
@@ -114,5 +112,17 @@ func makeHTTPRequest(url string, payload []byte) ([]byte, error) {
 	}
 
 	defer res.Body.Close()
-	return ioutil.ReadAll(res.Body)
+	body, err := ioutil.ReadAll(res.Body)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var resp *Response
+	err = json.Unmarshal(body, &resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
 }
