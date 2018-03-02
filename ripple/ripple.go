@@ -7,48 +7,6 @@ import (
 	"net/http"
 )
 
-type transaction struct {
-	Account         string `json:"Account"`
-	Amount          int    `json:"Amount"`
-	Destination     string `json:"Destination"`
-	TransactionType string `json:"TransactionType"`
-}
-
-type param struct {
-	Offline bool        `json:"offline"`
-	Secret  string      `json:"secret"`
-	TxJSON  transaction `json:"tx_json"`
-}
-
-type request struct {
-	Method string  `json:"method"`
-	Params []param `json:"params"`
-}
-
-// Response a response from the rippled server
-type Response struct {
-	Result *struct {
-		Role             string `json:"role"`
-		Status           string `json:"status"`
-		EngineResult     string `json:"engine_result"`
-		EngineResultCode string `json:"engine_result_code"`
-		EngineResultMsg  string `json:"engine_result_message"`
-		TxBlob           string `json:"tx_blob"`
-		Tx               *struct {
-			Account         string
-			Amount          string
-			Destination     string
-			Fee             string
-			Flags           int
-			Sequence        int
-			SigningPubKey   string
-			TransactionType string
-			TxnSignature    string
-			Hash            string `json:"hash"`
-		} `json:"tx_json"`
-	}
-}
-
 // TODO: move to config (?)
 var rippledURL = "http://0.0.0.0:5005" // 5005 is the admin port
 
@@ -75,7 +33,7 @@ func Ping() (*Response, error) {
 	return &pr, nil
 }
 
-// SignXaction sign a payment transaction using a rippled server
+// SignXaction sign a payment transaction using a rippled server.
 func SignXaction(secret string, account string, destination string, amount int) (*Response, error) {
 	r := request{Method: "sign"}
 	t := transaction{
@@ -88,6 +46,34 @@ func SignXaction(secret string, account string, destination string, amount int) 
 		Offline: false,
 		Secret:  secret,
 		TxJSON:  t,
+	}
+	r.Params = make([]param, 0)
+	r.Params = append(r.Params, p)
+
+	payload, err := json.Marshal(r)
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := makeHTTPRequest(rippledURL, payload)
+	if err != nil {
+		return nil, err
+	}
+
+	var res *Response
+	err = json.Unmarshal(body, &res)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+// SubmitSignedXaction submits a signed transaction blob for entry into the ledger.
+func SubmitSignedXaction(txBlob string) (*Response, error) {
+	r := request{Method: "submit"}
+	p := param{
+		TxBlob: txBlob,
 	}
 	r.Params = make([]param, 0)
 	r.Params = append(r.Params, p)
