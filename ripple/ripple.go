@@ -37,7 +37,7 @@ func SignXaction(secret string, account string, dest string, amount int) (*Respo
 	p := param{
 		Offline: false,
 		Secret:  secret,
-		TxJSON:  t,
+		TxJSON:  &t,
 	}
 	r.Params = make([]param, 0)
 	r.Params = append(r.Params, p)
@@ -78,12 +78,36 @@ func OpenPaymentChannel(secret string, account string, amt int, dest string,
 		Amount:          amt,
 		Destination:     dest,
 		TransactionType: "PaymentChannelCreate",
+		SettleDelay:     86400,
+		PublicKey:       pubkey,
 	}
 	p := param{
-		Secret: secret,
-		TxJSON: t,
+		Secret:     secret,
+		TxJSON:     &t,
+		FeeMultMax: 1000,
 	}
 
+	r.Params = make([]param, 0)
+	r.Params = append(r.Params, p)
+
+	payload, err := json.Marshal(r)
+	if err != nil {
+		return nil, err
+	}
+
+	return queryServer(rippledURL, payload)
+}
+
+// GetChannels get the ID and other important information about a channel open between two accounts.
+//
+// Since there's no great way to specify which channel you want, this function takes an
+// index and returns that transaction from the returned list.
+func GetChannels(account string, dest string) (*Response, error) {
+	r := request{Method: "account_channels"}
+	p := param{
+		Account:     account,
+		DestAccount: dest,
+	}
 	r.Params = make([]param, 0)
 	r.Params = append(r.Params, p)
 
