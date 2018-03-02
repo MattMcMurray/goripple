@@ -17,12 +17,7 @@ func Ping() (*Response, error) {
 		Params: nil,
 	}
 
-	p, err := json.Marshal(r)
-	if err != nil {
-		return nil, err
-	}
-
-	return queryServer(rippledURL, p)
+	return queryServer(rippledURL, &r)
 }
 
 // SignXaction sign a payment transaction using a rippled server.
@@ -42,12 +37,7 @@ func SignXaction(secret string, account string, dest string, amount int) (*Respo
 	r.Params = make([]param, 0)
 	r.Params = append(r.Params, p)
 
-	payload, err := json.Marshal(r)
-	if err != nil {
-		return nil, err
-	}
-
-	return queryServer(rippledURL, payload)
+	return queryServer(rippledURL, &r)
 }
 
 // SubmitSignedXaction submits a signed transaction blob for entry into the ledger.
@@ -59,12 +49,7 @@ func SubmitSignedXaction(txBlob string) (*Response, error) {
 	r.Params = make([]param, 0)
 	r.Params = append(r.Params, p)
 
-	payload, err := json.Marshal(r)
-	if err != nil {
-		return nil, err
-	}
-
-	return queryServer(rippledURL, payload)
+	return queryServer(rippledURL, &r)
 }
 
 // OpenPaymentChannel opens a payment channel from account -> dest.
@@ -90,12 +75,7 @@ func OpenPaymentChannel(secret string, account string, amt int, dest string,
 	r.Params = make([]param, 0)
 	r.Params = append(r.Params, p)
 
-	payload, err := json.Marshal(r)
-	if err != nil {
-		return nil, err
-	}
-
-	return queryServer(rippledURL, payload)
+	return queryServer(rippledURL, &r)
 }
 
 // GetChannels get the ID and other important information about a channel open between two accounts.
@@ -111,15 +91,28 @@ func GetChannels(account string, dest string) (*Response, error) {
 	r.Params = make([]param, 0)
 	r.Params = append(r.Params, p)
 
+	return queryServer(rippledURL, &r)
+}
+
+func ChannelAuthorize(channelID string, secret string, amt int) (*Response, error) {
+	r := request{Method: "channel_authorize"}
+	p := param{
+		ChannelID: channelID,
+		Secret:    secret,
+		Amount:    amt,
+	}
+	r.Params = make([]param, 0)
+	r.Params = append(r.Params, p)
+
+	return queryServer(rippledURL, &r)
+}
+
+func queryServer(url string, r *request) (*Response, error) {
 	payload, err := json.Marshal(r)
 	if err != nil {
 		return nil, err
 	}
 
-	return queryServer(rippledURL, payload)
-}
-
-func queryServer(url string, payload []byte) (*Response, error) {
 	p := bytes.NewBuffer(payload)
 
 	req, err := http.NewRequest("POST", url, p)

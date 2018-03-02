@@ -17,6 +17,8 @@ type param struct {
 	FeeMultMax  int          `json:"fee_mult_max,omitempty"`
 	Account     string       `json:"account,omitemtpy"`
 	DestAccount string       `json:"destination_account,omitempty"`
+	ChannelID   string       `json:"channel_id,omitempty"`
+	Amount      int          `json:"amount,omitempty"`
 }
 
 type request struct {
@@ -37,7 +39,9 @@ type Response struct {
 		EngineResultMsg  string `json:"engine_result_message"`
 		TxBlob           string `json:"tx_blob"`
 		ErrorMsg         string `json:"error_message"`
-		Tx               *struct {
+		Account          string `json:"account"`
+
+		Tx *struct {
 			Account         string
 			Amount          string
 			Destination     string
@@ -49,7 +53,7 @@ type Response struct {
 			TxnSignature    string
 			Hash            string `json:"hash"`
 		} `json:"tx_json"`
-		Account  string `json:"account"`
+
 		Channels *[]struct {
 			Account            string `json:"account"`
 			Amount             string `json:"amount"`
