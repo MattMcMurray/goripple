@@ -15,7 +15,7 @@ type param struct {
 	TxJSON      *transaction `json:"tx_json,omitempty"`
 	TxBlob      string       `json:"tx_blob,omitempty"`
 	FeeMultMax  int          `json:"fee_mult_max,omitempty"`
-	Account     string       `json:"account,omitemtpy"`
+	Account     string       `json:"account,omitempty"`
 	DestAccount string       `json:"destination_account,omitempty"`
 	ChannelID   string       `json:"channel_id,omitempty"`
 	Amount      int          `json:"amount,omitempty"`
