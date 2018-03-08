@@ -26,7 +26,16 @@ type request struct {
 	Params []param `json:"params,omitempty"`
 }
 
-type channel struct {
+//Channel when querying for channels between accounts, this is the information provided by the server
+type Channel struct {
+	Account            string `json:"account"`
+	Amount             string `json:"amount"`
+	Balance            string `json:"balance"`
+	ChannelID          string `json:"channel_id"`
+	DestinationAccount string `json:"destination_account"`
+	PublicKey          string `json:"public_key"`
+	PublicKeyHex       string `json:"public_key_hex"`
+	SettleDelay        int    `json:"settle_delay"`
 }
 
 // Response a response from the rippled server
@@ -40,6 +49,7 @@ type Response struct {
 		TxBlob           string `json:"tx_blob"`
 		ErrorMsg         string `json:"error_message"`
 		Account          string `json:"account"`
+		Signature        string `json:"signature"`
 
 		Tx *struct {
 			Account         string
@@ -53,16 +63,6 @@ type Response struct {
 			TxnSignature    string
 			Hash            string `json:"hash"`
 		} `json:"tx_json"`
-
-		Channels *[]struct {
-			Account            string `json:"account"`
-			Amount             string `json:"amount"`
-			Balance            string `json:"balance"`
-			ChannelID          string `json:"channel_id"`
-			DestinationAccount string `json:"destination_account"`
-			PublicKey          string `json:"public_key"`
-			PublicKeyHex       string `json:"public_key_hex"`
-			SettleDelay        int    `json:"settle_delay"`
-		} `json:"channels"`
+		Channels *[]Channel `json:"channels"`
 	}
 }
