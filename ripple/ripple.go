@@ -3,12 +3,12 @@ package ripple
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"net/http"
 )
 
-// TODO: move to config (?)
-var rippledURL = "http://0.0.0.0:5005" // 5005 is the admin port
+var RippledURL = ""
 
 // Ping Pings the ripple server
 func Ping() (*Response, error) {
@@ -17,7 +17,7 @@ func Ping() (*Response, error) {
 		Params: nil,
 	}
 
-	return queryServer(rippledURL, &r)
+	return queryServer(RippledURL, &r)
 }
 
 // SignXaction sign a payment transaction using a rippled server.
@@ -37,7 +37,7 @@ func SignXaction(secret string, account string, dest string, amount int) (*Respo
 	r.Params = make([]param, 0)
 	r.Params = append(r.Params, p)
 
-	return queryServer(rippledURL, &r)
+	return queryServer(RippledURL, &r)
 }
 
 // SubmitSignedXaction submits a signed transaction blob for entry into the ledger.
@@ -49,7 +49,7 @@ func SubmitSignedXaction(txBlob string) (*Response, error) {
 	r.Params = make([]param, 0)
 	r.Params = append(r.Params, p)
 
-	return queryServer(rippledURL, &r)
+	return queryServer(RippledURL, &r)
 }
 
 // OpenPaymentChannel opens a payment channel from account -> dest.
@@ -75,7 +75,7 @@ func OpenPaymentChannel(secret string, account string, amt int, dest string,
 	r.Params = make([]param, 0)
 	r.Params = append(r.Params, p)
 
-	return queryServer(rippledURL, &r)
+	return queryServer(RippledURL, &r)
 }
 
 // GetChannels get the ID and other important information about a channel open between two accounts.
@@ -91,7 +91,7 @@ func GetChannels(account string, dest string) (*Response, error) {
 	r.Params = make([]param, 0)
 	r.Params = append(r.Params, p)
 
-	return queryServer(rippledURL, &r)
+	return queryServer(RippledURL, &r)
 }
 
 func ChannelAuthorize(channelID string, secret string, amt int) (*Response, error) {
@@ -104,10 +104,13 @@ func ChannelAuthorize(channelID string, secret string, amt int) (*Response, erro
 	r.Params = make([]param, 0)
 	r.Params = append(r.Params, p)
 
-	return queryServer(rippledURL, &r)
+	return queryServer(RippledURL, &r)
 }
 
 func queryServer(url string, r *request) (*Response, error) {
+	if url == "" {
+		return nil, errors.New("URL is empty")
+	}
 	payload, err := json.Marshal(r)
 	if err != nil {
 		return nil, err
