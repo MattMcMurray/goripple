@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
+	"log"
 	"net/http"
+	"os"
 )
 
 var RippledURL = ""
@@ -108,11 +110,14 @@ func ChannelAuthorize(channelID string, secret string, amt int) (*Response, erro
 }
 
 func queryServer(url string, r *request) (*Response, error) {
+	errLog := log.New(os.Stderr, " [HTTP] ", log.Ldate|log.Ltime|log.Lshortfile)
 	if url == "" {
 		return nil, errors.New("URL is empty")
 	}
 	payload, err := json.Marshal(r)
 	if err != nil {
+		errLog.Println("Error marshalling request")
+		errLog.Println(r)
 		return nil, err
 	}
 
@@ -120,6 +125,9 @@ func queryServer(url string, r *request) (*Response, error) {
 
 	req, err := http.NewRequest("POST", url, p)
 	if err != nil {
+		errLog.Println("Error creating HTTP request")
+		errLog.Println(p.String())
+		errLog.Println(err)
 		return nil, err
 	}
 
@@ -128,20 +136,26 @@ func queryServer(url string, r *request) (*Response, error) {
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
+		errLog.Println("Error in response to HTTP POST")
+		errLog.Println(req)
+		errLog.Println(err)
 		return nil, err
 	}
 
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
-
 	if err != nil {
+		errLog.Println("Error reading response body")
+		errLog.Println(res.Body)
 		return nil, err
 	}
 
 	var resp *Response
 	err = json.Unmarshal(body, &resp)
 	if err != nil {
-		return nil, err
+		errLog.Println("Error unmarshalling JSON response body")
+		errLog.Println(string(body))
+		return nil, errors.New(string(body))
 	}
 
 	return resp, nil
